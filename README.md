@@ -12,6 +12,27 @@ Built as a **generic multi-game cross-save framework**, it features a pluggable 
 
 ---
 
+## 📑 Table of Contents
+
+- [🎮 Supported Titles](#supported-titles)
+- [🌟 Key Features](#key-features)
+- [⚡ Quick Start](#quick-start)
+  - [macOS and Linux](#macos-and-linux)
+  - [Windows](#windows)
+  - [Manual Setup](#manual-setup)
+- [📖 How It Works](#how-it-works)
+  - [From PS5 to PC](#from-ps5-to-pc)
+  - [From PC to PS5](#from-pc-to-ps5)
+- [🏗️ Architecture and Directory Structure](#architecture-and-directory-structure)
+- [🧩 Adding a New Game Module](#adding-a-new-game-module)
+- [🤝 Contributing](#contributing)
+  - [How You Can Help](#how-you-can-help)
+- [🗺️ Roadmap](#roadmap)
+- [⚖️ Disclaimer](#disclaimer)
+- [📄 License](#license)
+
+---
+
 ## 🎮 Supported Titles
 
 The table below lists all officially registered game modules and their current support status:
@@ -21,7 +42,7 @@ The table below lists all officially registered game modules and their current s
 | **Hogwarts Legacy** | `PPSA01603` (EU)<br>`PPSA01602` (NA)<br>`CUSA12824` (PS4) | Unreal Engine 4 GVAS<br>+ Oodle Kraken (`0x9e2a83c1`)<br>+ SQLite DB | Steam / Epic / GOG<br>(`HL-00-*.sav`, `SaveGameList.sav`) | 🟢 **Supported & Tested** | [`games/hogwarts_legacy/`](games/hogwarts_legacy/) |
 | **Elden Ring** | `PPSA03365`, `PPSA03366` | Proprietary BND4 / Sl2 | Steam (`ER0000.sl2`) | 🟡 *Planned / Help Wanted* | Template in `CONTRIBUTING.md` |
 | **Cyberpunk 2077** | `PPSA03974`, `PPSA03975` | REDengine (`sav.dat`) | Steam / GOG / Epic | 🟡 *Planned / Help Wanted* | — |
-| **Your Favorite Game** | Any Garlic-dumped PS5 title | Any container | Any PC save format | 💡 **Open for PRs!** | See [Contributing](#-contributing) |
+| **Your Favorite Game** | Any Garlic-dumped PS5 title | Any container | Any PC save format | 💡 **Open for PRs!** | See [Contributing](#contributing) |
 
 > 💡 **Automatic Detection**: When uploading decrypted ZIP archives exported from **Garlic Save Manager**, the converter automatically inspects the folder hierarchy and Title IDs to select the matching game module without requiring manual selection.
 
@@ -53,7 +74,7 @@ The table below lists all officially registered game modules and their current s
 
 ## ⚡ Quick Start
 
-### macOS & Linux
+### macOS and Linux
 ```bash
 git clone https://github.com/MicheleMontesi/ps5-pc-save-converter.git
 cd ps5-pc-save-converter
@@ -78,7 +99,7 @@ python3 app.py
 
 ## 📖 How It Works
 
-### 🎮 ➔ 💻 From PS5 to PC
+### From PS5 to PC
 ```
 [Jailbroken PS5]
        │
@@ -98,7 +119,7 @@ python3 app.py
 4. The system **auto-detects the game**, loads character metadata, and verifies save integrity.
 5. Click **"Install Directly to Game Folder"** (if running locally on PC) or **"Download ZIP Archive"** to get your PC-ready saves.
 
-### 💻 ➔ 🎮 From PC to PS5
+### From PC to PS5
 ```
 [PC Save Files] (e.g., HL-00-00.sav)
        │
@@ -122,7 +143,7 @@ python3 app.py
 
 ---
 
-## 🏗️ Architecture & Directory Structure
+## 🏗️ Architecture and Directory Structure
 
 ```text
 ps5-pc-save-converter/
@@ -206,7 +227,7 @@ Once registered, the game will automatically appear in the UI, match Garlic ZIP 
 Contributions are warmly welcomed! We are actively looking for contributors to help expand game support, test saves, and enhance platform detection.
 
 ### How You Can Help
-1. **Implement New Game Modules**: Pick a title from the [Supported Titles](#-supported-titles) table or request a new one.
+1. **Implement New Game Modules**: Pick a title from the [Supported Titles](#supported-titles) table or request a new one.
 2. **Provide Save Dumps**: Share decrypted PS5 saves (exported via Garlic Save Manager) alongside matching PC saves for reverse engineering container formats.
 3. **Bug Reports & Feedback**: Submit issues on GitHub for path detection failures or formatting incompatibilities.
 
