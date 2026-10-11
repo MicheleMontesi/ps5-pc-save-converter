@@ -38,10 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const step1Subtitle = document.getElementById('step1Subtitle');
     const dropzoneText = document.getElementById('dropzoneText');
     const gameSelect = document.getElementById('gameSelect');
+    const gameMethodText = document.getElementById('gameMethodText');
+    const gameMethodDot = document.getElementById('gameMethodDot');
 
     let currentSessionId = null;
     let currentDirection = 'ps5_to_pc';
     let detectedPaths = [];
+    let registeredGames = [];
 
     const HOUSE_DATA = {
         'Ravenclaw': { name: 'Corvonero', class: 'house-Ravenclaw', icon: '🦅' },
@@ -50,6 +53,60 @@ document.addEventListener('DOMContentLoaded', () => {
         'Hufflepuff': { name: 'Tassorosso', class: 'house-Hufflepuff', icon: '🦡' },
         'Unknown': { name: 'Non Assegnata', class: 'house-Unknown', icon: '🏰' }
     };
+
+    async function loadGames() {
+        try {
+            const res = await fetch('/api/games');
+            const data = await res.json();
+            if (data.success && data.games) {
+                registeredGames = data.games;
+                renderGameSelect(registeredGames);
+            }
+        } catch (e) {
+            console.warn('Errore nel caricamento dei moduli gioco:', e);
+        }
+    }
+
+    function renderGameSelect(games) {
+        if (!gameSelect) return;
+        const currentVal = gameSelect.value || 'hogwarts-legacy';
+        gameSelect.innerHTML = '';
+
+        games.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name + (g.active ? '' : ' (In arrivo)');
+            opt.disabled = !g.active;
+            if (g.id === currentVal) opt.selected = true;
+            gameSelect.appendChild(opt);
+        });
+
+        const moreOpt = document.createElement('option');
+        moreOpt.value = 'more';
+        moreOpt.textContent = '+ Aggiungi altri giochi (Modulo Python)';
+        moreOpt.disabled = true;
+        gameSelect.appendChild(moreOpt);
+
+        updateGameBadge();
+    }
+
+    function updateGameBadge() {
+        const selectedId = gameSelect ? gameSelect.value : 'hogwarts-legacy';
+        const game = registeredGames.find(g => g.id === selectedId);
+        if (game && gameMethodText) {
+            gameMethodText.textContent = `Supportato: ${game.format || 'Formato Nativo'}`;
+            if (gameMethodDot) {
+                gameMethodDot.className = game.active ? 'dot-active' : 'dot-pending';
+            }
+        }
+    }
+
+    if (gameSelect) {
+        gameSelect.addEventListener('change', () => {
+            updateGameBadge();
+            loadDetectedPaths(gameSelect.value);
+        });
+    }
 
     function updateDirectionUI() {
         if (currentDirection === 'ps5_to_pc') {
@@ -155,8 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!path) return;
 
         const selectedGame = gameSelect ? gameSelect.value : 'hogwarts-legacy';
-        if (selectedGame !== 'hogwarts-legacy') {
-            showModal('Gioco non supportato', 'Attualmente il convertitore è ottimizzato e abilitato esclusivamente per Hogwarts Legacy.');
+        const gameObj = registeredGames.find(g => g.id === selectedGame);
+        if (gameObj && !gameObj.active) {
+            showModal('Modulo in sviluppo', `Il supporto per "${gameObj.name}" è attualmente in fase di sviluppo.`);
             return;
         }
 
@@ -182,8 +240,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fileList.length === 0) return;
 
         const selectedGame = gameSelect ? gameSelect.value : 'hogwarts-legacy';
-        if (selectedGame !== 'hogwarts-legacy') {
-            showModal('Gioco non supportato', 'Attualmente il convertitore è ottimizzato e abilitato esclusivamente per Hogwarts Legacy.');
+        const gameObj = registeredGames.find(g => g.id === selectedGame);
+        if (gameObj && !gameObj.active) {
+            showModal('Modulo in sviluppo', `Il supporto per "${gameObj.name}" è attualmente in fase di sviluppo.`);
             return;
         }
 
@@ -220,6 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentSessionId = data.session_id;
+
+        // Auto-switch game in UI if auto-detected
+        if (data.game_id && gameSelect && gameSelect.value !== data.game_id) {
+            gameSelect.value = data.game_id;
+            updateGameBadge();
+            loadDetectedPaths(data.game_id);
+        }
+
         renderCharacterInfo(data.character);
         renderSlots(data.converted_slots);
 
@@ -229,35 +296,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCharacterInfo(char) {
         if (!char) {
-            characterCard.innerHTML = '<p>Dati personaggio non disponibili nel salvataggio.</p>';
+            characterCard.innerHTML = `
+                <div class="char-badge-card">
+                    <div class="char-crest house-Unknown">🎮</div>
+                    <div class="char-info">
+                        <div class="char-name">Salvataggi Convertiti</div>
+                        <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 0.9rem;">
+                            Tutti gli slot di salvataggio sono pronti per essere installati o scaricati.
+                        </p>
+                    </div>
+                </div>
+            `;
             return;
         }
 
-        const houseInfo = HOUSE_DATA[char.house] || HOUSE_DATA['Unknown'];
+        const houseInfo = (char.house && HOUSE_DATA[char.house]) ? HOUSE_DATA[char.house] : null;
         const wand = char.wand || {};
         const wandStr = [
             wand.wood ? `Legno di ${wand.wood}` : '',
             wand.core ? `Nucleo di ${wand.core}` : '',
             wand.length ? `Lunghezza ${wand.length}` : '',
             wand.flexibility ? `(${wand.flexibility})` : ''
-        ].filter(Boolean).join(' • ') || 'Bacchetta standard';
+        ].filter(Boolean).join(' • ');
+
+        let metaHtml = '';
+        if (houseInfo) metaHtml += `<span class="meta-pill">Casa: <strong>${houseInfo.name}</strong></span>`;
+        if (char.xp !== undefined) metaHtml += `<span class="meta-pill">Esperienza: <strong>${char.xp.toLocaleString()} XP</strong></span>`;
+        if (char.level !== undefined) metaHtml += `<span class="meta-pill">Livello: <strong>${char.level}</strong></span>`;
+        if (char.perk_points !== undefined) metaHtml += `<span class="meta-pill">Punti Talento: <strong>${char.perk_points}</strong></span>`;
+        if (char.inventory_capacity !== undefined) metaHtml += `<span class="meta-pill">Capacità Inventario: <strong>${char.inventory_capacity}</strong></span>`;
+
+        const icon = houseInfo ? houseInfo.icon : '🧙';
+        const crestClass = houseInfo ? houseInfo.class : 'house-Unknown';
 
         characterCard.innerHTML = `
             <div class="char-badge-card">
-                <div class="char-crest ${houseInfo.class}">
-                    ${houseInfo.icon}
+                <div class="char-crest ${crestClass}">
+                    ${icon}
                 </div>
                 <div class="char-info">
-                    <div class="char-name">${escapeHtml(char.name || 'Mago Sconosciuto')}</div>
-                    <div class="char-meta-row">
-                        <span class="meta-pill">Casa: <strong>${houseInfo.name}</strong></span>
-                        <span class="meta-pill">Esperienza: <strong>${char.xp.toLocaleString()} XP</strong></span>
-                        <span class="meta-pill">Punti Talento: <strong>${char.perk_points}</strong></span>
-                        <span class="meta-pill">Capacità Inventario: <strong>${char.inventory_capacity}</strong></span>
-                    </div>
-                    <div class="wand-box">
-                        <strong>Bacchetta:</strong> ${escapeHtml(wandStr)}
-                    </div>
+                    <div class="char-name">${escapeHtml(char.name || 'Salvataggio Giocatore')}</div>
+                    ${metaHtml ? `<div class="char-meta-row">${metaHtml}</div>` : ''}
+                    ${wandStr ? `<div class="wand-box"><strong>Bacchetta:</strong> ${escapeHtml(wandStr)}</div>` : ''}
                 </div>
             </div>
         `;
@@ -310,7 +390,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.backup_folder) {
                     msg += `<p style="margin-top:10px;">🛡️ <strong>Backup creato in:</strong><br><code>${escapeHtml(data.backup_folder)}</code></p>`;
                 }
-                msg += `<p style="margin-top:10px; color:#4ade80;">💡 L'indice <code>SaveGameList.sav</code> è stato reimpostato: all'avvio del gioco, Hogwarts Legacy ricaricherà automaticamente tutti i nuovi slot nel menu!</p>`;
+                const currentG = (gameSelect ? gameSelect.value : '');
+                if (currentG === 'hogwarts-legacy') {
+                    msg += `<p style="margin-top:10px; color:#4ade80;">💡 L'indice <code>SaveGameList.sav</code> è stato aggiornato: Hogwarts Legacy ricaricherà automaticamente tutti i nuovi slot nel menu!</p>`;
+                }
                 showModal('Operazione completata con successo!', msg);
             } else {
                 showModal('Errore di installazione', data.error || 'Impossibile scrivere nella cartella specificata.');
@@ -369,9 +452,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Auto-detect game paths on system
-    async function loadDetectedPaths() {
+    async function loadDetectedPaths(gameId) {
+        const game = gameId || (gameSelect ? gameSelect.value : 'hogwarts-legacy');
         try {
-            const res = await fetch('/api/detect-paths');
+            const res = await fetch(`/api/detect-paths?game=${encodeURIComponent(game)}`);
             const data = await res.json();
             if (data.success && data.paths && data.paths.length > 0) {
                 detectedPaths = data.paths;
@@ -398,7 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     detectedList.appendChild(item);
                 });
 
-                if (!targetDirInput.value && data.paths[0]) {
+                if (data.paths[0]) {
                     targetDirInput.value = data.paths[0].path;
                 }
             } else {
@@ -411,5 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Init
+    loadGames();
     loadDetectedPaths();
 });
