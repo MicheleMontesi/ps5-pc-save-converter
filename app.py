@@ -202,7 +202,7 @@ if __name__ == '__main__':
     # Open browser automatically on host machine after 1.2s
     threading.Timer(1.2, lambda: open_browser(port)).start()
     print("=" * 60)
-    print(f"[*] Cross-Save Converter Web UI attiva:")
+    print(f"[*] PS5 ⇄ PC Save Converter Web UI attiva:")
     print(f"    • Locale (Mac):      http://127.0.0.1:{port}")
     if local_ip != '127.0.0.1':
         print(f"    • Da Windows / LAN:  http://{local_ip}:{port}")

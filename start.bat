@@ -1,11 +1,10 @@
 @echo off
 REM Cross-Save Converter - Launcher for Windows
-title Cross-Save Converter (Console <-> PC)
-
+title PS5 ^<^-^> PC Save Converter
 cd /d "%~dp0"
 
 echo ==========================================================
-echo   Cross-Save Converter (Console ^<^-^> PC) - Web UI
+echo   PS5 ^<^-^> PC Save Converter - Web UI
 echo ==========================================================
 
 python --version >nul 2>&1

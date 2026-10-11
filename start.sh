@@ -5,7 +5,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR"
 
 echo "=========================================================="
-echo "  Cross-Save Converter (Console ⇄ PC) - Web UI"
+echo "  PS5 ⇄ PC Save Converter - Web UI"
 echo "=========================================================="
 
 # Check Python 3
