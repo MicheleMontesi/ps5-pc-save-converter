@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Save Converter (Console ⇄ PC)</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="stars-bg"></div>
+
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo-badge">
+                <svg viewBox="0 0 24 24" class="icon-wand" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.5 2.5a2.121 2.121 0 0 1 3 3L6 17l-4 1 1-4L14.5 2.5z"/>
+                    <path d="M12 5l3 3"/>
+                    <path d="M19 13l2-2"/>
+                    <path d="M14 18l2-2"/>
+                    <path d="M7 3l1 2"/>
+                </svg>
+            </div>
+            <h1 class="main-title">Cross-Save Converter</h1>
+            <p class="subtitle">Convertitore Universale di Salvataggi (Console ⇄ PC)</p>
+            <div class="platform-tags">
+                <span class="tag">PS5 Decrypted (Garlic)</span>
+                <span class="tag-arrow">⇄</span>
+                <span class="tag">Windows Steam / Epic</span>
+                <span class="tag-arrow">⇄</span>
+                <span class="tag">macOS Whisky / Wine</span>
+            </div>
+        </header>
+
+        <!-- GAME SELECTOR & DIRECTION BAR -->
+        <div class="controls-panel">
+            <div class="game-selector-bar">
+                <div class="game-select-field">
+                    <span class="game-select-icon">🎮</span>
+                    <label for="gameSelect">Gioco selezionato:</label>
+                    <div class="select-wrapper">
+                        <select id="gameSelect" class="game-dropdown">
+                            <option value="hogwarts-legacy" selected>Hogwarts Legacy</option>
+                            <option value="more" disabled>Altri giochi (In arrivo in futuro...)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="game-method-badge">
+                    <span class="dot-active"></span>
+                    <span>Supportato: UE4 GVAS + SQLite</span>
+                </div>
+            </div>
+
+            <div class="direction-bar">
+                <span class="direction-label">Direzione di conversione:</span>
+                <div class="toggle-group" id="directionToggleGroup">
+                    <button type="button" class="toggle-btn active" data-dir="ps5_to_pc" id="dirPs5ToPc">
+                        <span class="toggle-icon">🎮 ➔ 💻</span>
+                        <strong>Da PS5 a PC</strong>
+                    </button>
+                    <button type="button" class="toggle-btn" data-dir="pc_to_ps5" id="dirPcToPs5">
+                        <span class="toggle-icon">💻 ➔ 🎮</span>
+                        <strong>Da PC a PS5</strong>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN WORKFLOW -->
+        <main class="main-content">
+            
+            <!-- UPLOAD SECTION -->
+            <section class="card upload-card" id="uploadSection">
+                <div class="card-header">
+                    <h2 id="step1Title">1. Seleziona il Salvataggio PS5</h2>
+                    <p id="step1Subtitle">Carica il file ZIP decriptato da Garlic Save Manager (es. <code>PPSA01603_saves_dec.zip</code>) oppure un singolo file <code>.sav</code></p>
+                </div>
+
+                <div class="dropzone" id="dropzone">
+                    <input type="file" id="fileInput" accept=".zip,.sav" class="file-input" multiple>
+                    <div class="dropzone-content">
+                        <div class="upload-icon-wrapper">
+                            <svg viewBox="0 0 24 24" class="upload-icon" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <p class="dropzone-text" id="dropzoneText">Trascina qui il file <strong>.ZIP</strong> o <strong>.SAV</strong></p>
+                        <span class="dropzone-subtext" id="dropzoneSubtext">oppure clicca per sfogliare i file del computer</span>
+                    </div>
+                </div>
+
+                <!-- QUICK LOCAL PATH OPTION -->
+                <div class="local-path-accordion">
+                    <button type="button" class="btn-text" id="toggleLocalPath">
+                        <span>⚙️ Oppure converti da percorso cartella locale sul Mac/PC</span>
+                        <span class="arrow-indicator">▼</span>
+                    </button>
+                    <div class="local-path-drawer" id="localPathDrawer" style="display: none;">
+                        <div class="input-group">
+                            <input type="text" id="localPathInput" placeholder="/Users/.../Downloads/PPSA01603" class="input-text">
+                            <button type="button" class="btn btn-secondary" id="btnConvertLocal">Converti Percorso</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-bar-container" id="progressContainer" style="display: none;">
+                    <div class="progress-bar" id="progressBar"></div>
+                    <span class="progress-label" id="progressLabel">Conversione e decompressione in corso...</span>
+                </div>
+            </section>
+
+            <!-- RESULT / PREVIEW SECTION (HIDDEN INITIALLY) -->
+            <section class="card result-card" id="resultSection" style="display: none;">
+                <div class="card-header flex-between">
+                    <div>
+                        <h2>2. Dati del Personaggio Rilevati</h2>
+                        <p class="status-badge success">✓ Conversione completata con successo</p>
+                    </div>
+                    <button class="btn btn-sm btn-ghost" id="btnReset">Ricomincia</button>
+                </div>
+
+                <!-- CHARACTER OVERVIEW CARD -->
+                <div class="character-grid" id="characterCard">
+                    <!-- Dynamic Javascript population -->
+                </div>
+
+                <div class="slots-overview">
+                    <h3>Slot di salvataggio convertiti (<span id="slotCount">0</span>)</h3>
+                    <div class="slot-tags" id="slotTagsList"></div>
+                </div>
+
+                <hr class="divider">
+
+                <!-- STEP 3: INSTALL OR DOWNLOAD -->
+                <div class="actions-section">
+                    <h2>3. Destinazione Salvataggio</h2>
+                    
+                    <!-- AUTO DETECTED FOLDERS -->
+                    <div class="detected-folders-box" id="detectedFoldersBox">
+                        <div class="box-header">
+                            <span class="pulsing-dot"></span>
+                            <span class="box-title">Cartelle di gioco rilevate sul tuo sistema</span>
+                        </div>
+                        <div class="detected-list" id="detectedList">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- MANUAL TARGET DIR -->
+                    <div class="manual-target-group">
+                        <label for="targetDirInput">Percorso cartella salvataggi PC:</label>
+                        <div class="input-group">
+                            <input type="text" id="targetDirInput" class="input-text" placeholder="%LOCALAPPDATA%\Hogwarts Legacy\Saved\SaveGames\<UserID>">
+                        </div>
+                        <small class="field-hint">Su Windows Steam/Epic di solito si trova in: <code>%LOCALAPPDATA%\Hogwarts Legacy\Saved\SaveGames\&lt;TuoID&gt;</code></small>
+                    </div>
+
+                    <!-- BACKUP OPTION -->
+                    <div class="checkbox-group">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="backupCheckbox" checked>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">
+                                <strong>Crea backup di sicurezza</strong> dei vecchi salvataggi prima di sovrascrivere
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- ACTION BUTTONS -->
+                    <div class="buttons-row">
+                        <button class="btn btn-primary btn-large" id="btnInstall">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Installa Direttamente nella Cartella di Gioco</span>
+                        </button>
+                        <button class="btn btn-secondary btn-large" id="btnDownloadZip">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Scarica Archivio ZIP (per copia manuale)</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="app-footer">
+            <p>Hogwarts Legacy Save Converter • Compatibile con Windows, macOS (Whisky / Wine) e Steam Deck (Proton)</p>
+        </footer>
+    </div>
+
+    <!-- MODAL / TOAST -->
+    <div class="modal-backdrop" id="modalBackdrop" style="display: none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalTitle">Operazione completata</h3>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="modalConfirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
