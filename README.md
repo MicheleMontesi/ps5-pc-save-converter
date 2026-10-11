@@ -2,43 +2,56 @@
 
 [![Platform](https://img.shields.io/badge/Platforms-PS5%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-blue.svg)](#)
 [![Architecture](https://img.shields.io/badge/Architecture-Modular%20Plugin%20System-purple.svg)](#)
-[![Active Module](https://img.shields.io/badge/Active%20Module-Hogwarts%20Legacy-gold.svg)](#)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-brightgreen.svg)](#)
-[![License](https://img.shields.io/badge/License-MIT-orange.svg)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 A modular, extensible Web Application and framework for **bidirectional save conversion between PlayStation 5 (PS5) and PC**.
 
-Designed as a **generic multi-game framework**, it features a pluggable architecture allowing new games to be added with minimal code, while shipping with **Hogwarts Legacy** as its first fully featured, active reference implementation.
-
-> **Italiano**: Un convertitore di salvataggi modulare ed estensibile tra **PlayStation 5 (Garlic Save Manager)** e **PC (Windows / Steam / Epic Games / macOS Whisky / Steam Deck Proton)**. Progettato come framework generico per supportare più giochi tramite plugin: include **Hogwarts Legacy** come primo modulo attivo e funzionante.
+Built as a **generic multi-game cross-save framework**, it features a pluggable architecture allowing new games to be added with minimal code, while shipping with **Hogwarts Legacy** as its first fully featured, battle-tested reference module.
 
 ---
 
-## 🌟 Key Features / Caratteristiche
+## 🎮 Supported Titles
 
-* 🧩 **Modular Plugin Architecture:**
-  * Clean abstraction layer (`core.base.BaseGameConverter`) decoupling game-specific save logic from the Web UI, filesystem scanner, and installation manager.
-  * Central `GameRegistry` with **automatic game detection** from PS5 Title IDs (e.g. `PPSA01603`) in ZIP archives or folder trees.
+The table below lists all officially registered game modules and their current support status:
+
+| Game | PlayStation Title IDs | PS5 Save Engine | PC Target Format | Status | Module Path |
+| :--- | :--- | :--- | :--- | :---: | :--- |
+| **Hogwarts Legacy** | `PPSA01603` (EU)<br>`PPSA01602` (NA)<br>`CUSA12824` (PS4) | Unreal Engine 4 GVAS<br>+ Oodle Kraken (`0x9e2a83c1`)<br>+ SQLite DB | Steam / Epic / GOG<br>(`HL-00-*.sav`, `SaveGameList.sav`) | 🟢 **Supported & Tested** | [`games/hogwarts_legacy/`](games/hogwarts_legacy/) |
+| **Elden Ring** | `PPSA03365`, `PPSA03366` | Proprietary BND4 / Sl2 | Steam (`ER0000.sl2`) | 🟡 *Planned / Help Wanted* | Template in `CONTRIBUTING.md` |
+| **Cyberpunk 2077** | `PPSA03974`, `PPSA03975` | REDengine (`sav.dat`) | Steam / GOG / Epic | 🟡 *Planned / Help Wanted* | — |
+| **Your Favorite Game** | Any Garlic-dumped PS5 title | Any container | Any PC save format | 💡 **Open for PRs!** | See [Contributing](#-contributing) |
+
+> 💡 **Automatic Detection**: When uploading decrypted ZIP archives exported from **Garlic Save Manager**, the converter automatically inspects the folder hierarchy and Title IDs to select the matching game module without requiring manual selection.
+
+---
+
+## 🌟 Key Features
+
+* 🧩 **Pluggable Modular Engine:**
+  * Clean separation of concerns via [`core.base.BaseGameConverter`](core/base.py).
+  * Central [`GameRegistry`](core/registry.py) that handles dynamic game registration, auto-detection from PS5 Title IDs, and API discovery.
 * 🔁 **Bidirectional Conversion (PS5 ⇄ PC):**
-  * **PS5 ➔ PC:** Ingests decrypted saves exported from **Garlic Save Manager**, patches container platform headers, translates internal slot schemes, and preserves native compression (e.g. Oodle Kraken chunk compression).
-  * **PC ➔ PS5:** Packages PC `.sav` files into Garlic Save Manager's expected directory layout (`PPSAxxxxx/sdimg_xxxx/ue4savegame.ps5.sav`), ready for instant console import, re-encryption, and resigning.
-* 🧙 **Active Module: Hogwarts Legacy:**
-  * Bit-for-bit **Oodle Kraken chunk compression** (`0x9e2a83c1`) preservation compatible with modern PC patches and Save Editors.
-  * Real-time character metadata introspection from in-memory SQLite (House crests, Wand wood/core/length, XP, Perk points, Inventory).
-  * Main menu slot index generation (`SaveGameList.sav`).
+  * **PS5 ➔ PC:** Ingests decrypted saves exported from **Garlic Save Manager**, patches container platform headers (`PS5` ➔ `Windows`), maps internal slot indices, and preserves native compression bit-for-bit.
+  * **PC ➔ PS5:** Packages PC `.sav` files into Garlic Save Manager's expected directory layout (`PPSAxxxxx/sdimg_xxxx/ue4savegame.ps5.sav`), patches platform headers (`Windows` ➔ `PS5`), ready for instant console import, re-encryption, and resigning.
+* 🧙 **Active Reference Module: Hogwarts Legacy:**
+  * **Oodle Kraken Chunk Preservation**: Preserves chunk-compressed SQLite blobs (`0x9e2a83c1`), ensuring 100% compatibility with modern PC game updates and community save editors.
+  * **Real-time Character Introspection**: Extracts character name, Hogwarts House (with crests), wand details (wood, core, length, flexibility), XP, talent/perk points, and inventory capacity directly from memory.
+  * **Automatic Menu Indexing**: Restores `SaveGameList.sav` to ensure your character immediately appears in the main menu.
 * 📂 **Cross-Platform Directory Auto-Detection:**
-  * **Windows:** Scans `%LOCALAPPDATA%` and game save subdirectories.
+  * **Windows:** Automatically finds `%LOCALAPPDATA%\...\SaveGames\<SteamID>\`.
   * **macOS:** Scans Wine prefixes across **Whisky**, **CrossOver**, and **Heroic Games Launcher**.
-  * **Linux / Steam Deck:** Scans Valve Proton compatdata prefixes.
+  * **Linux / Steam Deck:** Scans Valve Proton `compatdata` directories.
 * 🛡️ **Automated Safety Backups:**
-  * Creates timestamped backups (`Backup_YYYYMMDD_HHMMSS/`) of target directories before writing new files.
+  * Creates timestamped backups (`Backup_YYYYMMDD_HHMMSS/`) of target directories prior to installing new saves.
 * 🌐 **Zero-Config LAN Web UI:**
-  * Clean glassmorphism interface with drag-and-drop support.
+  * Wizarding dark theme with modern glassmorphism.
   * Accessible from any device on your local network (e.g. run on Mac, access from Windows PC or Steam Deck).
 
 ---
 
-## ⚡ Quick Start / Come Avviare
+## ⚡ Quick Start
 
 ### macOS & Linux
 ```bash
@@ -46,40 +59,77 @@ git clone https://github.com/MicheleMontesi/ps5-pc-save-converter.git
 cd ps5-pc-save-converter
 ./start.sh
 ```
-*(Automatically creates Python virtual environment, installs dependencies, and opens the Web UI at `http://127.0.0.1:5050`)*
+*(Automatically creates a Python virtual environment, installs dependencies, and opens the Web UI at `http://127.0.0.1:5050`)*
 
 ### Windows
-1. Clone or download the repository.
+1. Clone or download this repository.
 2. Double-click **`start.bat`**.
-*(Requires Python installed with "Add Python to PATH" enabled)*
+*(Requires Python 3.10+ installed with "Add Python to PATH" checked)*
+
+### Manual Setup
+```bash
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python3 app.py
+```
 
 ---
 
-## 📖 Usage Guide / Guida all'Uso
+## 📖 How It Works
 
-### 🎮 ➔ 💻 From PS5 to PC:
-1. On your jailbroken PS5, open **Garlic Save Manager** (`http://<PS5_IP>:8082`).
-2. Export the decrypted save (e.g. `PPSA01603_saves_dec.zip` for Hogwarts Legacy).
+### 🎮 ➔ 💻 From PS5 to PC
+```
+[Jailbroken PS5]
+       │
+       ▼  Garlic Save Manager (Export Decrypted Save)
+[PPSA01603_saves_dec.zip]
+       │
+       ▼  Drag & Drop into Web UI
+[PS5 ⇄ PC Save Converter] ➔ Auto-detects Title ID + Patches GVAS Platform Headers
+       │
+       ├── Option A: "Install Directly to Game Folder" (Auto-backup + local PC copy)
+       └── Option B: "Download ZIP Archive" (Ready-to-use PC saves)
+```
+
+1. On your jailbroken PS5, open **Garlic Save Manager** (`http://<ps5-ip>:8082`).
+2. Export the decrypted save (e.g., `PPSA01603_saves_dec.zip`).
 3. Open the Web UI and drag the ZIP file into the dropzone.
-4. The system will **auto-detect the game** and display character/save details.
-5. Click **"Installa Direttamente nella Cartella di Gioco"** (if on PC) or **"Scarica Archivio ZIP"** to download the converted PC files.
+4. The system **auto-detects the game**, loads character metadata, and verifies save integrity.
+5. Click **"Install Directly to Game Folder"** (if running locally on PC) or **"Download ZIP Archive"** to get your PC-ready saves.
 
-### 💻 ➔ 🎮 From PC to PS5:
-1. In the Web UI, toggle **"Da PC a PS5"**.
-2. Drag your PC save files (or a ZIP archive containing them).
-3. Click **"Scarica Pacchetto per Garlic Save Manager (PS5)"**.
-4. In Garlic Save Manager on your PS5, import the generated ZIP to re-encrypt and resign the save.
+### 💻 ➔ 🎮 From PC to PS5
+```
+[PC Save Files] (e.g., HL-00-00.sav)
+       │
+       ▼  Drag & Drop into Web UI (Mode: PC to PS5)
+[PS5 ⇄ PC Save Converter] ➔ Patches Platform Headers + Packages Garlic Directory Layout
+       │
+       ▼  "Download Package for Garlic Save Manager"
+[PPSA01603_Garlic_Ready.zip]
+       │
+       ▼  Garlic Save Manager (Import Decrypted Save)
+[PS5 Re-encrypter / Keystone Resigner]
+       │
+       ▼
+[Play on PS5 Console!]
+```
+
+1. In the Web UI, toggle **"From PC to PS5"** (💻 ➔ 🎮).
+2. Drag your PC save files (or a ZIP file containing them).
+3. Click **"Download Package for Garlic Save Manager (PS5)"**.
+4. In Garlic Save Manager on your PS5, import the generated ZIP to re-encrypt and resign the save back to your console account.
 
 ---
 
-## 🏗️ Project Architecture / Architettura del Progetto
+## 🏗️ Architecture & Directory Structure
 
 ```text
 ps5-pc-save-converter/
-├── core/                                # Generic Framework Core
+├── core/                                # Generic Framework Engine
 │   ├── base.py                          # BaseGameConverter abstract interface
-│   ├── registry.py                      # Dynamic plugin registry & Title ID detector
-│   ├── installer.py                     # Universal backup engine & file installer
+│   ├── registry.py                      # Dynamic plugin registry & Title ID matcher
+│   ├── installer.py                     # Safe backup engine & file installer
 │   └── __init__.py
 ├── games/                               # Pluggable Game Modules
 │   ├── hogwarts_legacy/                 # Active Module: Hogwarts Legacy
@@ -91,23 +141,19 @@ ps5-pc-save-converter/
 ├── templates/
 │   └── index.html                       # Responsive Web UI
 ├── static/
-│   ├── css/style.css                    # Dark wizarding glassmorphism theme
+│   ├── css/style.css                    # Glassmorphism dark theme
 │   └── js/app.js                        # Dynamic frontend (API-driven game loader)
-├── start.sh                             # macOS/Linux launcher
-└── start.bat                            # Windows launcher
+├── start.sh                             # macOS/Linux one-click launcher
+├── start.bat                            # Windows one-click launcher
+├── CONTRIBUTING.md                      # Guide for adding new game converters
+└── LICENSE                              # MIT License
 ```
 
 ---
 
-## 🧩 Adding a New Game Module / Come Aggiungere un Nuovo Gioco
+## 🧩 Adding a New Game Module
 
-The converter is engineered to make adding new games straightforward. To implement a new game module:
-
-### 1. Create a module folder in `games/`
-Create `games/<your_game_name>/__init__.py`.
-
-### 2. Subclass `BaseGameConverter`
-Inherit from `core.base.BaseGameConverter` and implement the required properties and methods:
+Adding support for another PS5 title is as simple as creating a subclass of `BaseGameConverter`:
 
 ```python
 from typing import Dict, Any, List
@@ -133,7 +179,7 @@ class EldenRingConverter(BaseGameConverter):
         return 'Proprietary BND4 / Raw Sl2'
 
     def convert_ps5_to_pc(self, input_source: Any) -> Dict[str, Any]:
-        # Parse decrypted PS5 save, convert headers/checksums, return PC files
+        # Parse decrypted PS5 save, patch headers/checksums, return PC files
         saves = {'ER0000.sl2': b'...'}
         character_info = {'name': 'Tarnished', 'level': 150}
         return {'character': character_info, 'saves': saves, 'errors': []}
@@ -146,25 +192,47 @@ class EldenRingConverter(BaseGameConverter):
     def find_candidate_save_directories(self) -> List[Dict[str, Any]]:
         # Locate game saves on Windows, Proton, or macOS Wine
         return [{'path': 'C:\\Users\\...\\AppData\\Roaming\\EldenRing\\...', 'platform': 'Windows'}]
-```
 
-### 3. Register your module in `games/__init__.py`
-```python
-from core.registry import GameRegistry
-from .hogwarts_legacy import HogwartsLegacyConverter
-from .elden_ring import EldenRingConverter
-
-GameRegistry.register(HogwartsLegacyConverter())
+# Register in games/__init__.py
 GameRegistry.register(EldenRingConverter())
 ```
 
-Once registered:
-* The game **instantly appears** in the Web UI game selector.
-* Garlic ZIP uploads matching `PPSA03365` or `PPSA03366` will be **automatically identified**.
-* Safe backups and directory installation work **out of the box**.
+Once registered, the game will automatically appear in the UI, match Garlic ZIP uploads by Title ID, and support safe backups and installation.
+
+---
+
+## 🤝 Contributing
+
+Contributions are warmly welcomed! We are actively looking for contributors to help expand game support, test saves, and enhance platform detection.
+
+### How You Can Help
+1. **Implement New Game Modules**: Pick a title from the [Supported Titles](#-supported-titles) table or request a new one.
+2. **Provide Save Dumps**: Share decrypted PS5 saves (exported via Garlic Save Manager) alongside matching PC saves for reverse engineering container formats.
+3. **Bug Reports & Feedback**: Submit issues on GitHub for path detection failures or formatting incompatibilities.
+
+For full developer instructions, workflow guidelines, and code conventions, please see [**CONTRIBUTING.md**](CONTRIBUTING.md).
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Bidirectional save converter for Hogwarts Legacy (PS5 ⇄ PC)
+- [x] Oodle Kraken chunk compression preservation
+- [x] Modular plugin architecture & auto-detection engine
+- [x] Cross-platform save path scanner (Windows, macOS Wine/Whisky, Steam Deck Proton)
+- [ ] Add converter module for **Elden Ring** (`PPSA03365`)
+- [ ] Add converter module for **Cyberpunk 2077** (`PPSA03974`)
+- [ ] CLI mode for headless and batch conversions
+- [ ] Standalone executable bundle (PyInstaller) for zero-dependency Windows execution
 
 ---
 
 ## ⚖️ Disclaimer
 
-This tool is an unofficial community open-source project and is not affiliated with, endorsed by, or associated with Sony Interactive Entertainment, Warner Bros. Games, Avalanche Software, or any other game publisher. Always create backups of your save files prior to modification.
+This tool is an unofficial, community-developed open-source project. It is not affiliated with, endorsed by, or associated with Sony Interactive Entertainment, Warner Bros. Games, Avalanche Software, or any other game publisher. Always create backups of your save files prior to modification.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
